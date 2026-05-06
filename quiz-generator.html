@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Ultimate Quiz Generator | Teacher Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f7ff;
+            margin: 0;
+            padding: 20px;
+            color: #1e2a3e;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* Dashboard Layout */
+        .dashboard {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        .builder-panel {
+            flex: 1.2;
+            min-width: 320px;
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .preview-panel {
+            flex: 2;
+            min-width: 500px;
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 6px;
+        }
+        select, input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 14px;
+            font-size: 1rem;
+        }
+        button {
+            background: #2c5f8a;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            margin-top: 5px;
+        }
+        button:hover {
+            background: #1e3e5c;
+        }
+        .question-card {
+            background: #f9f9ff;
+            border-left: 8px solid #2c5f8a;
+            padding: 15px;
+            margin-bottom: 18px;
+            border-radius: 20px;
+        }
+        .quiz-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-success {
+            background: #2b7a3e;
+        }
+        .btn-warning {
+            background: #d97706;
+        }
+        .paper-size {
+            width: auto;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .answer-key-area {
+            background: #eef2ff;
+            padding: 12px;
+            border-radius: 16px;
+            margin-top: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .drag-drop-zone {
+            background: #f1f5f9;
+            min-height: 180px;
+            border: 2px dashed #2c5f8a;
+            border-radius: 20px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+        .drag-item {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 40px;
+            padding: 8px 15px;
+            margin: 6px;
+            display: inline-block;
+            cursor: grab;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .drop-zone {
+            background: #e6f0fa;
+            min-height: 100px;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        .matched {
+            background: #c8e6d9;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        .score-board {
+            font-size: 1.4rem;
+            font-weight: bold;
+            background: #d1e7ff;
+            padding: 12px;
+            border-radius: 24px;
+            text-align: center;
+        }
+        @media print {
+            .builder-panel, .quiz-actions, .no-print, button, .dashboard > div:first-child {
+                display: none !important;
+            }
+            .preview-panel {
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                width: 100%;
+            }
+            body, .container {
+                background: white;
+                padding: 0;
+            }
+            .question-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+        .inline-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .small-btn {
+            width: auto;
+            padding: 5px 12px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>📚 Smart Quiz Generator | Teacher Dashboard</h1>
+    <div class="dashboard">
+        <!-- LEFT: BUILDER -->
+        <div class="builder-panel no-print">
+            <h2>✏️ Build Quiz</h2>
+            <div class="form-group">
+                <label>Student Name Field (will appear on quiz)</label>
+                <input type="text" id="studentNameLabel" value="Full Name: _______________" placeholder="Name label">
+            </div>
+            <div class="form-group">
+                <label>Quiz Title</label>
+                <input type="text" id="quizTitle" placeholder="e.g., Science Exam" value="Weekly Assessment">
+            </div>
+            <div class="form-group">
+                <label>Question Type</label>
+                <select id="qType">
+                    <option value="truefalse">True / False</option>
+                    <option value="mcq">Multiple Choice (4 options)</option>
+                    <option value="fillblank">Fill in the Blanks</option>
+                    <option value="tablefill">Fill in the Table</option>
+                    <option value="matching">Matching Type (Interactive drag & printable)</option>
+                    <option value="conceptmap">Concept Mapping (drag terms)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Question Text / Instruction</label>
+                <textarea id="questionText" rows="2" placeholder="Enter question or table description"></textarea>
+            </div>
+            <div id="dynamicOptions"></div>
+            <div class="form-group">
+                <label>Answer Key (teacher provides once, auto-assigns)</label>
+                <textarea id="answerKey" rows="2" placeholder="Correct answer(s). For MCQs: A/B/C/D. For T/F: true/false. For fill: answer. For matching: A1,B2 etc"></textarea>
+                <small>Matching example: "1A,2B,3C" means item1→A, item2→B, item3→C</small>
+            </div>
+            <button id="addQuestionBtn">➕ Add Question to Quiz</button>
+            <hr>
+            <div class="quiz-actions">
+                <button id="saveQuizBtn" class="btn-success">💾 Save Quiz (localStorage)</button>
+                <button id="loadQuizBtn" class="btn-secondary">📂 Load Saved Quiz</button>
+                <button id="newQuizBtn" class="btn-warning">🆕 New Quiz</button>
+            </div>
+            <div class="answer-key-area">
+                <strong>📌 Auto answer key system:</strong> When you add each question, the answer key you typed is linked automatically. No manual per-item assignment.
+            </div>
+            <div class="form-group">
+                <label>Paper Size (Print/DOCX/PDF)</label>
+                <select id="paperSizeSelect">
+                    <option value="A4">A4</option>
+                    <option value="A5">A5</option>
+                    <option value="A6">A6</option>
+                    <option value="A7">A7</option>
+                    <option value="Long">Long (8.5x13)</option>
+                </select>
+            </div>
+            <button id="exportCSVBtn">📊 Export Scores CSV</button>
+            <button id="downloadDocxBtn">📄 Download Printable Quiz (DOCX)</button>
+            <button id="printQuizBtn">🖨️ Print Quiz (Local Printer)</button>
+        </div>
+
+        <!-- RIGHT: PREVIEW & INTERACTIVE ZONE -->
+        <div class="preview-panel" id="quizPreviewPanel">
+            <h2>📖 Live Quiz / Student View</h2>
+            <div id="studentNameDiv" style="margin-bottom: 15px;">
+                <label id="nameLabelDisplay">Full Name: </label>
+                <input type="text" id="studentRealName" placeholder="Enter your full name" style="width: 70%;">
+            </div>
+            <div id="questionsContainer"></div>
+            <div id="gradeSection" style="margin-top: 20px;">
+                <button id="gradeQuizBtn">✅ Auto-Grade My Quiz</button>
+                <div id="scoreResult" class="score-board" style="margin-top: 12px;"></div>
+            </div>
+            <div id="answerKeyDisplay" class="answer-key-area" style="margin-top: 20px;">
+                <strong>🔑 Answer Key (Teacher reference)</strong>
+                <div id="answerKeyList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- GLOBAL QUIZ STORAGE ----------
+    let quizQuestions = [];   // each question: { type, text, options, correctAnswer, tableData?, matchPairs?, conceptItems? }
+    let answerMap = {};       // store correct answers per index
+
+    // Helper: render all questions in interactive mode (for student)
+    function renderInteractiveQuiz() {
+        const container = document.getElementById('questionsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        if (quizQuestions.length === 0) {
+            container.innerHTML = '<p>No questions added. Use left panel to build quiz.</p>';
+            document.getElementById('answerKeyList').innerHTML = '';
+            return;
+        }
+        let answerHtml = '<ul>';
+        quizQuestions.forEach((q, idx) => {
+            answerHtml += `<li><strong>Q${idx+1}:</strong> ${q.correctAnswer || 'see inside'}</li>`;
+        });
+        answerHtml += '</ul>';
+        document.getElementById('answerKeyList').innerHTML = answerHtml;
+
+        quizQuestions.forEach((q, idx) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.dataset.qid = idx;
+            card.innerHTML = `<strong>Question ${idx+1} [${q.type}]</strong><br>${q.text.replace(/\n/g,'<br>')}<br>`;
+            if (q.type === 'truefalse') {
+                card.innerHTML += `<div class="tf-group">
+                    <label><input type="radio" name="q${idx}" value="true"> True</label>
+                    <label><input type="radio" name="q${idx}" value="false"> False</label>
+                </div>`;
+            } 
+            else if (q.type === 'mcq') {
+                let opts = q.options || ['A','B','C','D'];
+                let optHtml = '';
+                opts.forEach(opt => {
+                    optHtml += `<label><input type="radio" name="q${idx}" value="${opt}"> ${opt}</label><br>`;
+                });
+                card.innerHTML += `<div>${optHtml}</div>`;
+            }
+            else if (q.type === 'fillblank') {
+                card.innerHTML += `<input type="text" class="fill-input" data-qidx="${idx}" placeholder="Type answer" style="width:80%">`;
+            }
+            else if (q.type === 'tablefill') {
+                let tableHtml = '<table><thead><tr>';
+                if (q.tableHeaders) {
+                    q.tableHeaders.forEach(h => tableHtml += `<th>${h}</th>`);
+                    tableHtml += '</tr></thead><tbody>';
+                    if (q.tableRows) {
+                        q.tableRows.forEach((row, ri) => {
+                            tableHtml += '<tr>';
+                            row.forEach(cell => {
+                                if (cell.includes('___')) {
+                                    tableHtml += `<td><input type="text" class="table-input" data-qidx="${idx}" data-row="${ri}" style="width:100px"></td>`;
+                                } else {
+                                    tableHtml += `<td>${cell}</td>`;
+                                }
+                            });
+                            tableHtml += '</tr>';
+                        });
+                    }
+                    tableHtml += '</tbody></table>';
+                } else {
+                    tableHtml = '<p>Table structure missing</p>';
+                }
+                card.innerHTML += `<div>${tableHtml}</div>`;
+            }
+            else if (q.type === 'matching') {
+                let leftItems = q.leftItems || ['Item 1','Item 2'];
+                let rightItems = q.rightItems || ['A) Match1','B) Match2'];
+                let dragHtml = `<div class="drag-drop-zone"><strong>Drag from left to right column</strong><div id="dragLeft-${idx}" class="drop-zone">`;
+                leftItems.forEach((item, iidx) => {
+                    dragHtml += `<span class="drag-item" draggable="true" data-term="${item}" data-qidx="${idx}" data-original="${item}">${item}</span> `;
+                });
+                dragHtml += `</div><div id="dropRight-${idx}" class="drop-zone" style="background:#eef2dd;"><strong>Drop matches here</strong><div class="drop-targets"></div></div></div>`;
+                card.innerHTML += dragHtml;
+                // attach drag events after appending
+                setTimeout(() => attachDragEvents(idx), 10);
+            }
+            else if (q.type === 'conceptmap') {
+                let terms = q.conceptTerms || ['Photosynthesis', 'Oxygen', 'Glucose'];
+                card.innerHTML += `<p><strong>Drag terms to build concept map area:</strong></p><div class="drag-drop-zone" id="conceptZone-${idx}">
+                    <div class="concept-terms">${terms.map(t => `<span class="drag-item" draggable="true" data-term="${t}">${t}</span>`).join(' ')}</div>
+                    <div class="drop-canvas" style="min-height:120px; background:#fff3e0; margin-top:12px; padding:10px;" ondragover="event.preventDefault()" ondrop="dropOnCanvas(event, ${idx})"></div>
+                </div>`;
+            }
+            container.appendChild(card);
+        });
+    }
+
+    window.dropOnCanvas = function(e, qidx) {
+        e.preventDefault();
+        let term = e.dataTransfer.getData("text/plain");
+        let canvas = e.target.closest('.drop-canvas');
+        if(canvas) {
+            let span = document.createElement('span');
+            span.innerText = term;
+            span.style.display = 'inline-block';
+            span.style.background = '#2c5f8a';
+            span.style.color = 'white';
+            span.style.padding = '5px 10px';
+            span.style.margin = '4px';
+            span.style.borderRadius = '20px';
+            canvas.appendChild(span);
+        }
+    };
+
+    function attachDragEvents(idx) {
+        let dragItems = document.querySelectorAll(`#dragLeft-${idx} .drag-item`);
+        dragItems.forEach(el => {
+            el.setAttribute('draggable', 'true');
+            el.ondragstart = (e) => {
+                e.dataTransfer.setData("text/plain", e.target.getAttribute('data-term'));
+                e.dataTransfer.effectAllowed = "copy";
+            };
+        });
+        let rightZone = document.getElementById(`dropRight-${idx}`);
+        if(rightZone) {
+            rightZone.ondragover = (e) => e.preventDefault();
+            rightZone.ondrop = (e) => {
+                e.preventDefault();
+                let term = e.dataTransfer.getData("text/plain");
+                let dropDiv = rightZone.querySelector('.drop-targets');
+                if(!dropDiv) return;
+                let matchSpan = document.createElement('div');
+                matchSpan.innerText = `✓ ${term} matched`;
+                matchSpan.style.background = '#c8e6d9';
+                matchSpan.style.padding = '5px';
+                matchSpan.style.margin = '4px';
+                matchSpan.style.borderRadius = '12px';
+                dropDiv.appendChild(matchSpan);
+                let sourceDrag = document.querySelector(`.drag-item[data-term="${term}"]`);
+                if(sourceDrag) sourceDrag.classList.add('matched');
+            };
+        }
+    }
+
+    // auto grading
+    document.getElementById('gradeQuizBtn')?.addEventListener('click', () => {
+        let score = 0;
+        let total = quizQuestions.length;
+        let details = [];
+        for(let i=0; i<quizQuestions.length; i++) {
+            let q = quizQuestions[i];
+            let correct = q.correctAnswer || '';
+            let userAnswer = '';
+            if(q.type === 'truefalse') {
+                let selected = document.querySelector(`input[name="q${i}"]:checked`);
+                userAnswer = selected ? selected.value : '';
+            } else if(q.type === 'mcq') {
+                let selected = document.querySelector(`input[name="q${i}"]:checked`);
+                userAnswer = selected ? selected.value : '';
+            } else if(q.type === 'fillblank') {
+                let inp = document.querySelector(`.fill-input[data-qidx="${i}"]`);
+                userAnswer = inp ? inp.value.trim() : '';
+            } else if(q.type === 'tablefill') {
+                userAnswer = 'filled (manual check)';
+                let inputs = document.querySelectorAll(`.table-input[data-qidx="${i}"]`);
+                let allOk = true;
+                inputs.forEach(inp => { if(inp.value.trim() === '') allOk=false; });
+                if(allOk && inputs.length>0) userAnswer = 'table completed';
+                else userAnswer = 'incomplete';
+            } else if(q.type === 'matching') {
+                userAnswer = 'drag matched visually';
+            } else if(q.type === 'conceptmap') {
+                userAnswer = 'concept map built';
+            }
+            let isCorrect = (userAnswer.toLowerCase() === correct.toLowerCase());
+            if(q.type === 'mcq' && correct && userAnswer.toUpperCase() === correct.toUpperCase()) isCorrect=true;
+            if(q.type === 'truefalse' && userAnswer.toLowerCase() === correct.toLowerCase()) isCorrect=true;
+            if(isCorrect && userAnswer !== '') score++;
+            details.push(`Q${i+1}: ${isCorrect ? '✓' : '✗'} (Correct: ${correct})`);
+        }
+        let studentName = document.getElementById('studentRealName').value || 'Anonymous';
+        let scoreText = `Score: ${score}/${total} (${Math.round(score/total*100)}%)`;
+        document.getElementById('scoreResult').innerHTML = `${scoreText}<br>${details.join(' | ')}`;
+        // store for CSV later
+        window.lastScoreData = { name: studentName, score: `${score}/${total}`, details: details.join('; ') };
+    });
+
+    // Add question from teacher
+    document.getElementById('addQuestionBtn').addEventListener('click', () => {
+        let type = document.getElementById('qType').value;
+        let text = document.getElementById('questionText').value;
+        let answer = document.getElementById('answerKey').value;
+        if(!text) { alert("Enter question text"); return; }
+        let newQ = { type, text, correctAnswer: answer };
+        if(type === 'mcq') {
+            let opts = prompt("Enter 4 options separated by comma (e.g., A. Paris, B. London, C. Berlin, D. Madrid)", "A. Option1,B. Option2,C. Option3,D. Option4");
+            newQ.options = opts ? opts.split(',').map(s=>s.trim()) : ['A','B','C','D'];
+        }
+        if(type === 'tablefill') {
+            let cols = prompt("Number of columns?", "3");
+            let rows = prompt("Number of rows?", "2");
+            let headers = [];
+            for(let c=0; c<parseInt(cols); c++) headers.push(prompt(`Header ${c+1}`,"Column"));
+            let tableRows = [];
+            for(let r=0; r<parseInt(rows); r++) {
+                let rowCells = [];
+                for(let c=0; c<parseInt(cols); c++) {
+                    let val = prompt(`Row ${r+1}, Col ${c+1} content (use ___ for blank)`,"___");
+                    rowCells.push(val);
+                }
+                tableRows.push(rowCells);
+            }
+            newQ.tableHeaders = headers;
+            newQ.tableRows = tableRows;
+        }
+        if(type === 'matching') {
+            let left = prompt("Left side items (comma)", "Sun, Earth, Moon");
+            let right = prompt("Right side matches (comma)", "Star, Planet, Satellite");
+            newQ.leftItems = left.split(',').map(s=>s.trim());
+            newQ.rightItems = right.split(',').map(s=>s.trim());
+        }
+        if(type === 'conceptmap') {
+            let terms = prompt("Concept terms (comma)", "Photosynthesis,Sunlight,Chlorophyll,Oxygen");
+            newQ.conceptTerms = terms.split(',').map(s=>s.trim());
+        }
+        quizQuestions.push(newQ);
+        renderInteractiveQuiz();
+        document.getElementById('questionText').value = '';
+        document.getElementById('answerKey').value = '';
+    });
+
+    document.getElementById('saveQuizBtn').addEventListener('click', () => {
+        localStorage.setItem('savedQuiz', JSON.stringify(quizQuestions));
+        alert('Quiz saved locally!');
+    });
+    document.getElementById('loadQuizBtn').addEventListener('click', () => {
+        let saved = localStorage.getItem('savedQuiz');
+        if(saved) {
+            quizQuestions = JSON.parse(saved);
+            renderInteractiveQuiz();
+            alert('Quiz loaded');
+        } else alert('No saved quiz');
+    });
+    document.getElementById('newQuizBtn').addEventListener('click', () => {
+        if(confirm('Clear all questions?')) { quizQuestions = []; renderInteractiveQuiz(); }
+    });
+
+    // CSV export (scores)
+    document.getElementById('exportCSVBtn').addEventListener('click', () => {
+        let student = document.getElementById('studentRealName').value || 'NoName';
+        let scoreInfo = window.lastScoreData ? window.lastScoreData.score : 'Not graded';
+        let details = window.lastScoreData ? window.lastScoreData.details : '';
+        let csvContent = `Student Name,Score,Details\n"${student}","${scoreInfo}","${details}"\n`;
+        let blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+        saveAs(blob, 'quiz_scores.csv');
+    });
+
+    // PRINT with paper size & printable version
+    document.getElementById('printQuizBtn').addEventListener('click', () => {
+        let paper = document.getElementById('paperSizeSelect').value;
+        let style = document.createElement('style');
+        style.textContent = `@page { size: ${paper}; } body { margin: 1cm; } .no-print { display: none; }`;
+        document.head.appendChild(style);
+        window.print();
+        setTimeout(() => style.remove(), 500);
+    });
+
+    // DOCX download (printable version as .doc)
+    document.getElementById('downloadDocxBtn').addEventListener('click', () => {
+        let quizTitle = document.getElementById('quizTitle').value;
+        let nameField = document.getElementById('studentNameLabel').value;
+        let questionsHtmlForDoc = `<html><head><meta charset="UTF-8"><title>${quizTitle}</title><style>body{font-family:Calibri; margin:2cm;} table, th, td{border:1px solid black; border-collapse:collapse; padding:5px;} .q-block{margin-bottom:20px;}</style></head><body><h1>${quizTitle}</h1><p>${nameField}</p>`;
+        quizQuestions.forEach((q,idx) => {
+            questionsHtmlForDoc += `<div class="q-block"><strong>${idx+1}. ${q.text}</strong><br>`;
+            if(q.type === 'truefalse') questionsHtmlForDoc += `_____ True / False<br>`;
+            else if(q.type === 'mcq') questionsHtmlForDoc += `( ) A &nbsp;&nbsp; ( ) B &nbsp;&nbsp; ( ) C &nbsp;&nbsp; ( ) D<br>`;
+            else if(q.type === 'fillblank') questionsHtmlForDoc += `Answer: _____________<br>`;
+            else if(q.type === 'tablefill' && q.tableHeaders && q.tableRows) {
+                questionsHtmlForDoc += `<table><tr>${q.tableHeaders.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+                q.tableRows.forEach(row => {
+                    questionsHtmlForDoc += `<tr>${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`;
+                });
+                questionsHtmlForDoc += `</table>`;
+            }
+            else if(q.type === 'matching') questionsHtmlForDoc += `Column A: ${(q.leftItems||[]).join(', ')}<br>Column B: ${(q.rightItems||[]).join(', ')}<br>Answer blanks: ___ ___ ___<br>`;
+            else questionsHtmlForDoc += `(space for answer) _______________<br>`;
+            questionsHtmlForDoc += `</div><hr>`;
+        });
+        questionsHtmlForDoc += `<h3>Answer Key</h3><ul>${quizQuestions.map((q,i)=>`<li>Q${i+1}: ${q.correctAnswer}</li>`).join('')}</ul></body></html>`;
+        let blob = new Blob([questionsHtmlForDoc], {type: 'application/msword'});
+        saveAs(blob, 'printable_quiz.doc');
+    });
+
+    // initial render
+    renderInteractiveQuiz();
+    document.getElementById('studentNameDiv').style.display = 'block';
+    // Update name label
+    let nameInputLabel = document.getElementById('studentNameLabel');
+    nameInputLabel.addEventListener('input', () => {
+        document.getElementById('nameLabelDisplay').innerText = nameInputLabel.value + ': ';
+    });
+    document.getElementById('nameLabelDisplay').innerText = nameInputLabel.value + ': ';
+</script>
+</body>
+</html>
